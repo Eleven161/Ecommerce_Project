@@ -1,0 +1,19 @@
+server:
+  port: 8083
+spring:  application:    name: GATEWAY-SERVICE  cloud:    gateway:      routes:      - id: ORDER-SERVICE
+        uri: lb://ORDER-SERVICE        predicates:        - Path=/order/**
+       
+      - id: PAYMENT-SERVICE
+        uri: lb://PAYMENT-SERVICE
+        predicates:
+        - Path=/order/**
+#        filters:
+#        - name: CircuitBreaker
+#          args:
+#            name: PAYMENT-SERVICE
+#             fallbackuri:forward:/ paymentFallBack
+#        filters:
+#        - name: CircuitBreaker
+#          args:
+#            name: ORDER-SERVICE
+#            fallbackuri: forward:/orderFallBack
