@@ -13,6 +13,8 @@ import com.ecommerce.project.entity.Order;
 import com.ecommerce.project.repository.OrderRepo;
 import com.ecommerce.project.service.OrderService;
 
+import reactor.core.publisher.Mono;
+
 @Service
 public class OrderServiceImpl implements OrderService {
 	
@@ -23,7 +25,7 @@ public class OrderServiceImpl implements OrderService {
 	@Autowired
 	private RestTemplate template;
     @Autowired
-    private WebClient.Builder webClientBuilder;
+    private WebClient.Builder webClient;
 	@Override
 	public TransactionResponse saveOrder(TransactionRequest request) {
 		
@@ -32,15 +34,16 @@ public class OrderServiceImpl implements OrderService {
 		Order order=request.getOrder();
 		payment.setOrderId(order.getId());
 		payment.setAmount(order.getPrice());
-		//Payment paymentResponse=template.postForObject("http://PAYMENT-SERVICE/payment", payment, Payment.class);
-		Payment paymentResponse=webClientBuilder.build()
-		.post()
-		.uri("http://PAYMENT-SERVICE/payment").accept(MediaType.APPLICATION_JSON).retrieve().bodyToMono(Payment.class).block();
+	//	Payment paymentResponse=template.postForObject("http://PAYMENT-SERVICE/payment", payment, Payment.class);
+		Payment paymentResponse=webClient.build().post()
+		.uri("http://PAYMENT-SERVICE/payment")
+		.body(Mono.just(request),Payment.class)
+		.retrieve().bodyToMono(Payment.class).block();
 		
 		message=paymentResponse.getPaymentStatus().equals("success") 
 			? "payment done and order successfully" : "payment failed"; 
 		orderRepo.save(order);
-		return new TransactionResponse(order,paymentResponse.getTransactionId(),paymentResponse.getAmount(),message);
+		return new TransactionResponse(order,paymentResponse.getTransactionId(),paymentResponse .getAmount(),message);
 	}
 	
    
